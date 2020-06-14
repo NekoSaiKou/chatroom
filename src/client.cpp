@@ -81,7 +81,6 @@ void recv_msg(int client){
 /**
  * Get user input
  * @param buf    - char*, the char buffer for store user input
- * @param length - int  , the user input length
  */
 int user_input(char *buf){
     int ch;

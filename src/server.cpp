@@ -5,7 +5,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
+#include <signal.h>
 // c++
 #include <chrono>
 #include <iomanip>
@@ -47,6 +47,7 @@ string get_datetime(){
  * @note This thread is detach from the main thread, the thread will close itself if server is closed.
  */
 void client_listener(fd_set *com_conn, int *max_fd, int client, queue<c_pkt> *msg_queue){
+	signal(SIGPIPE, SIG_IGN);
 	char uname [NAME_MAX] = {0};
 	while(true){
 		char buf[1024] = {0};	// Server recv buffer
@@ -57,7 +58,7 @@ void client_listener(fd_set *com_conn, int *max_fd, int client, queue<c_pkt> *ms
 				fprintf(stderr, "[server] Connection lost\n");
 			}
 			else{
-				perror("[server] receive error\n");
+				perror("[server] receive error");
 			}
 			// Remove client and update broadcast list and max_fd
 			client_Mutex.lock();
@@ -147,7 +148,10 @@ void bcast(fd_set *com_conn, int *max_fd, queue<c_pkt> *msg_queue){
     		serialize(msg_packet, data);
 			for(int i=0; i<= max_target; i++){
 				if(FD_ISSET(i, &client_set)){
-					send(i, data, CPKTSIZE, 0);
+					int ret = send(i, data, CPKTSIZE, 0);
+					if (ret == -1 && errno == EPIPE){
+						perror("send");
+					}
 				}
 			}
 		}
