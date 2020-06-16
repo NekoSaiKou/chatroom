@@ -45,10 +45,10 @@ void send_msg(int client, action type, string msg, string name){
  * @note  SOCK_STREAM are full-duplex byte streams --from socket manpage
  */
 void recv_msg(int client){
-    while(true){
-        char buf[1024] = {0};	// Server recv buffer
-        int  n_buf;				// Numver of received bytes
-        if ((n_buf=recv(client, buf, sizeof(buf), 0)) <= 0 ){
+    while (true){
+        char buf[1024] = {0}; // Server recv buffer
+        int n_buf;            // Number of received bytes
+        if ((n_buf = recv(client, buf, sizeof(buf), 0)) <= 0){
             if (n_buf == 0){
                 fprintf(stderr, "[chatroom] Connection lost\n");
             }
@@ -60,19 +60,19 @@ void recv_msg(int client){
         else{
             c_pkt *msg_packet = new c_pkt;
             deserialize(buf, msg_packet);
-            switch(msg_packet->type){
-                case action::CON:
-                    printf("%s | [chatroom] Welcome <%s>\n", msg_packet->time, msg_packet->uname);
-                    break;
-                case action::MSG:
-                    printf("%s | [%s] %s\n", msg_packet->time, msg_packet->uname, msg_packet->msg);
-                    break;
-                case action::EXT:
-                    printf("%s | [chatroom] Goodbye, %s\n", msg_packet->time, msg_packet->uname);
-                    break;
-                default:
-                    fprintf(stderr, "[chatroom] Message decode error\n");
-                    break;
+            switch (msg_packet->type){
+            case action::CON:
+                printf("%s | [chatroom] Welcome <%s>\n", msg_packet->time, msg_packet->uname);
+                break;
+            case action::MSG:
+                printf("%s | [%s] %s\n", msg_packet->time, msg_packet->uname, msg_packet->msg);
+                break;
+            case action::EXT:
+                printf("%s | [chatroom] Goodbye, %s\n", msg_packet->time, msg_packet->uname);
+                break;
+            default:
+                fprintf(stderr, "[chatroom] Message decode error\n");
+                break;
             }
         }
     }
@@ -86,46 +86,53 @@ int user_input(char *buf){
     int ch;
     int i = 0;
     while ((ch = getchar()) != '\n'){
-        buf[i]=ch;
+        buf[i] = ch;
         i++;
     }
-    buf[i]='\0';
+    buf[i] = '\0';
     return i;
 }
 
 int main(int argc, char *argv[]){
-    // Check server arguments
+    /** 
+     * Check server arguments
+     * argv[1] --> IPaddress to server
+     * argv[2] --> The name of client
+    */
     string host;
     string username;
     if (argc != 3){
         fprintf(stderr, "[chatroom] Error: Usage: %s Server-IP Username\n", argv[0]);
-        exit(EXIT_FAILURE); 
+        exit(EXIT_FAILURE);
     }
     else{
         struct sockaddr_in sa;
         int result;
         if ((result = inet_pton(AF_INET, argv[1], &(sa.sin_addr))) <= 0){
             fprintf(stderr, "[chatroom] Target server address invalid format\n");
-            exit(EXIT_FAILURE);  
+            exit(EXIT_FAILURE);
         }
         else if (strlen(argv[2]) > NAME_MAX){
             fprintf(stderr, "[chatroom] Username should less then %d character\n", NAME_MAX);
-            exit(EXIT_FAILURE);  
+            exit(EXIT_FAILURE);
         }
         else{
-            printf("[chatroom] Target host address %s, user name is %s\n",argv[1], argv[2]);
+            printf("[chatroom] Target host address %s, user name is %s\n", argv[1], argv[2]);
             host = argv[1];
             username = argv[2];
         }
     }
 
     // Start connection
+
+    // 1. Initialze the server socket info
     struct sockaddr_in serverAddr;
     serverAddr.sin_family = AF_INET;                               // IPv4
     serverAddr.sin_port = htons(SERVER_PORT);                      // Port
     serverAddr.sin_addr.s_addr = inet_addr(host.c_str());          // Address
-    memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero); // Clear data 
+    memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero); // Clear data
 
+    // 2. Connect to the server
     int clientSocket;
     socklen_t addr_size = sizeof serverAddr;
     if ((clientSocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0){
@@ -134,19 +141,19 @@ int main(int argc, char *argv[]){
     }
     if (connect(clientSocket, (struct sockaddr *)&serverAddr, addr_size) < 0){
         perror("[chatroom] Host connection failed");
-        exit(EXIT_FAILURE); 
+        exit(EXIT_FAILURE);
     }
 
-    // Send name
+    // 3. Send name to server
     send_msg(clientSocket, action::CON, "", username);
 
-    // Start listener background thread
+    // Start a background thread to listen message from server
     thread listener;
     listener = thread(recv_msg, clientSocket);
 
-    // Start capture user input
-    while(true){
-        char input_buf[1024] = {0};	// Server recv buffer
+    // Start to capture user input
+    while (true){
+        char input_buf[1024] = {0}; // Input buffer
         int length = user_input(input_buf);
         send_msg(clientSocket, action::MSG, input_buf, username);
     }

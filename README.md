@@ -2,7 +2,7 @@
 ---
 ## Getting Started
 
-This chatroom is a simple chatroom written in c++, socket amd multithread. This is the second project of the 108-2 Operating System course.
+This chatroom is a simple chatroom written in c++, socket amd multithread. 
 
 ### Build
 
@@ -31,3 +31,4 @@ cd ./bin
 ## Authors
 
 * **CY Yang** - [NekoSaiKou](https://github.com/NekoSaiKou)
+* **Peter**   - [peter1719](https://github.com/peter1719)

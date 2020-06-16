@@ -5,12 +5,13 @@
  * @param msgPacket - c_pkt pointer, the message sturct from client to server
  * @param data      - char pointer , serialized data
  */
-void serialize(c_pkt* msgPacket, char *data){
-    action *q = (action*)data;    
+void serialize(c_pkt *msgPacket, char *data){
+    // Packet action type
+    action *q = (action *)data;
     *q = msgPacket->type;
     ++q;
 
-    char *p = (char*)q;
+    char *p = (char *)q;
     // Packet username
     int i = 0;
     while (i < NAME_MAX){
@@ -39,12 +40,12 @@ void serialize(c_pkt* msgPacket, char *data){
  * @param data      - char pointer     , serialized data
  * @param msgPacket - c_pkt pointer, deserialized data in c_pkt form
  */
-void deserialize(char *data, c_pkt* msgPacket){
-    action *q = (action*)data;
+void deserialize(char *data, c_pkt *msgPacket){
+    action *q = (action *)data;
     msgPacket->type = *q;
     ++q;
 
-    char *p = (char*)q;
+    char *p = (char *)q;
     // Decode username
     int i = 0;
     while (i < NAME_MAX){
